@@ -14,9 +14,21 @@ const svgSprite = require("gulp-svg-sprite");
 const fonter = require("gulp-fonter");
 const ttf2woff2 = require("gulp-ttf2woff2");
 const htmlmin = require("gulp-htmlmin");
+const include = require("gulp-include");
+
+function pages() {
+  return src("src/pages/*.html")
+    .pipe(
+      include({
+        includePaths: "src/components",
+      })
+    )
+    .pipe(dest("src"))
+    .pipe(browserSync.stream());
+}
 
 function htmlCompress() {
-  return src("src/**/*.html")
+  return src("src/*.html")
     .pipe(htmlmin({ collapseWhitespace: true }))
     .pipe(dest("dist"));
 }
@@ -91,9 +103,11 @@ function watching() {
       baseDir: "src/",
     },
   });
-  watch(["src/sass/style.sass"], styles);
+  watch(["src/fonts/src-fonts"], fonts);
+  watch(["src/sass/*.sass"], styles);
   watch(["src/img/src-img"], images);
   watch(["src/js/main.js"], scripts);
+  watch(["src/components/*", "src/pages/*"], pages);
   watch(["src/*.html"]).on("change", browserSync.reload);
 }
 
@@ -104,12 +118,11 @@ function cleanDist() {
 function building() {
   return src(
     [
-      "src/css/style.min.css",
+      "src/css/*.css",
       "src/img/*.*",
-      "!src/img/*.svg",
-      "src/img/sprite.svg",
       "src/fonts/*.*",
-      "src/js/main.min.js",
+      "src/js/*.js",
+      "!src/js/main.js",
     ],
     {
       base: "src",
@@ -117,6 +130,7 @@ function building() {
   ).pipe(dest("dist"));
 }
 
+exports.pages = pages;
 exports.htmlCompress = htmlCompress;
 exports.images = images;
 exports.fonts = fonts;
@@ -125,5 +139,5 @@ exports.styles = styles;
 exports.scripts = scripts;
 exports.watching = watching;
 
-exports.build = series(cleanDist, building);
-exports.default = parallel(styles, scripts, watching);
+exports.build = series(cleanDist, building, htmlCompress);
+exports.default = parallel(styles, scripts, pages, watching);
